@@ -1,0 +1,1 @@
+Create a fastAPI server which can be launch by uvicorn. The server will contain REST APIs allow user send a request within a requirement and a github repository address and then the server will use MetaGPT to create the program following that requirement and push it to that github repository address. Make sure that using .env to store any secret tokens

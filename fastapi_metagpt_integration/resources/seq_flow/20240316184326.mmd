@@ -1,0 +1,13 @@
+
+sequenceDiagram
+    participant FS as FastAPIServer
+    participant GI as GitHubIntegration
+    participant MI as MetaGPTIntegration
+    participant C as Config
+    FS->>C: load_env()
+    C-->>FS: return config
+    FS->>FS: api_endpoints()
+    FS->>MI: generate_code(requirements)
+    MI-->>FS: return code
+    FS->>GI: push_code(repository, code)
+    GI-->>FS: return success
