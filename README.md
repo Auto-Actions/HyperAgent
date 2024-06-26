@@ -19,9 +19,12 @@ The workspace allows developers to start up a project easily by creating an issu
 
 - From the homepage of the new repository, switch to Action tab to manually set action through `set up a workflow yourself →`
 
+
+## Action Workflow
+
 ![Setup action](profile/assets/create_action_script.png)
 
-- This is the first version of action script.
+- This is a simple version of action script.
 
 ```yaml
 name: Auto Initialization
@@ -69,6 +72,8 @@ jobs:
 
 - Commit the file as an initial commit. For further actions, you have to update this file as a new commit.
 
+## Secure workflow
+
 ![Setup action](profile/assets/commit_action.png)
 
   - There is some sensitive information in the action script such as API key. It can be hidden by setting `API_KEY` secret variable in `Settings -> Secretes and variables -> Actions New repository secret`
@@ -82,6 +87,9 @@ jobs:
     ```
 
 - Next step is to tell the action about your idea by creating a new issue.
+
+
+## Initial issues
 
 ![Create issue](profile/assets/create_issue.png)
 
