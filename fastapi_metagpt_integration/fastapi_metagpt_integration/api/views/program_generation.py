@@ -47,6 +47,8 @@ router = APIRouter()
 def generate_program(data: GenerateProgramRequest, dependencies=[Security(get_api_key)]):
     local_dir = ROOT_PATH / config.WORKSPACE
     logger.info(f'Idea: {data.idea}')
-    repo: ProjectRepo = generate_repo(data.idea, n_round=1, code_review=False)
+    repo: ProjectRepo = generate_repo(idea=data.idea, project_name=data.project_name, inc=data.incremental, n_round=data.n_rounds, code_review=True)
     logger.info(f'Workdir: {repo.workdir.name}')
-    return {'repo_name':  repo.workdir.name}
+    logger.info(f'Github repo: {repo.git_repo}')
+    logger.info(f'Source path: {repo._srcs_path}')
+    return {'repo_name':  repo.workdir.name, 'n_rounds': data.n_rounds}

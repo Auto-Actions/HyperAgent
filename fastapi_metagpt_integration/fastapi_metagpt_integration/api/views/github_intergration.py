@@ -9,7 +9,7 @@ from ...schemas.fields import (
    GithubReposResponse
 )
 from ...config import config, config_env
-from ...const import ROOT_PATH
+from ...const import ROOT_PATH, WORKSPACE
 from ...logs import logger
 from ...auth import get_api_key
 
@@ -37,6 +37,12 @@ def add_remote_url(repo_dir: Path, remote_name: str, remote_url: str):
 
         # Add the remote with the specified name and URL
         origin = repo.create_remote(remote_name, url=remote_url)
+        origin.fetch()
+        repo.heads.master.checkout()
+        repo.create_head("master", origin.refs.master)
+        repo.heads.master.set_tracking_branch(origin.refs.master)
+        origin.pull()
+
         logger.info(f"Successfully added remote '{remote_name}' to the repository.")
 
     except git.exc.InvalidGitRepositoryError:
@@ -54,21 +60,30 @@ def push_to_new_branch(repo_dir: Path, remote_name: str, remote_url: str, branch
             origin = repo.create_remote(remote_name, url=remote_url)
             logger.info(f"Successfully added remote '{remote_name}' to the repository.")
         else:
+            logger.info(f'Remote {remote_name} does already exist.')
             origin = repo.remote(remote_name)
         # Create a new branch
-        new_branch = repo.create_head(branch_name)
-        logger.info(f"Created new local branch '{branch_name}'.")
+        logger.info(repo.branches)
+        existing_branch = [b.name for b in repo.branches]
+        if branch_name in existing_branch:
+            new_branch = branch_name
+            # repo.git.checkout('HEAD', b=new_branch)
+            logger.info(f'Branch {branch_name} does already exist.')
+        else:
+            logger.info(f"Created new local branch '{branch_name}'.")
+            new_branch = repo.create_head(branch_name)
         if commit_message:
             repo.index.commit(commit_message)
             logger.info(f"Committed changes with message: '{commit_message}'.")
         # Push the new branch to the remote (set upstream for convenience)
-        origin.push(new_branch, set_upstream=True)
+        origin.pull(new_branch)
+        origin.push(f'master:{new_branch}', set_upstream=True)
         logger.info(f"Successfully pushed branch '{branch_name}' to remote '{remote_name}'.")
 
     except git.exc.InvalidGitRepositoryError:
         logger.info(f"Invalid Git repository at '{repo_dir}'.")
-    except Exception as e:
-        logger.info(f"An error occurred: {e}")
+    # except Exception as e:
+    #     logger.info(f"An error occurred: {e}")
 
 
 class GitHubIntegration:
@@ -110,11 +125,13 @@ class GitHubIntegration:
 
 @router.post('/init_repo/', response_model=GithubReposResponse, dependencies=[Security(get_api_key)])
 async def push_init_code(data: GithubReposRequest):
-    local_dir = ROOT_PATH / config.WORKSPACE / data.local
+    # local_dir = ROOT_PATH / config.WORKSPACE / data.local
+    local_dir = WORKSPACE / data.local
     github_token = config_env['GITHUB_TOKEN']
     auth_remote_url = data.remote_url.replace('https://', f'https://{github_token}@')
     logger.info(f'Remote URL {auth_remote_url}')
     add_remote_url(local_dir, data.remote_name, auth_remote_url)
+
     push_to_new_branch(local_dir, data.remote_name, auth_remote_url, data.branch, data.commit_message)
     response = {
       'id': 1,
@@ -123,3 +140,11 @@ async def push_init_code(data: GithubReposRequest):
       'status': True
     }
     return response
+
+
+if __name__ == '__main__':
+    repo_dir = 'gomoku_game'
+    remote_name = 'origin'
+    remote_url = 'https://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@github.com/Auto-Actions/test_3'
+    repo = git.Repo(WORKSPACE/repo_dir)
+    print(repo.remotes)

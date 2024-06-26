@@ -24,7 +24,11 @@ class GithubReposResponse(BaseModel):
 
 class GenerateProgramRequest(BaseModel):
     idea: str
+    project_name: str
+    n_rounds: int = 1
+    incremental: bool = False
 
 
 class GenerateProgramResponse(BaseModel):
     repo_name: str
+    n_rounds: int

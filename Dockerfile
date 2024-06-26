@@ -9,6 +9,9 @@ RUN apt-get update \
         pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
+RUN git config --global user.email nguyenminh180798@gmail.com
+RUN git config --global  pull.ff true
+
 WORKDIR /
 
 RUN mkdir -p /app 
@@ -16,9 +19,9 @@ RUN mkdir -p /app
 
 
 COPY . /app
-# COPY ./MetaGPT_smart_contract/ /app
+# COPY ./MetaGPT/ /app
 
-WORKDIR /app/MetaGPT_smart_contract/
+WORKDIR /app/MetaGPT/
 RUN pip install --no-cache-dir -r requirements.txt &&\
     pip install -e .
 

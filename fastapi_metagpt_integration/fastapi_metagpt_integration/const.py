@@ -6,4 +6,5 @@ from loguru import logger
 
 
 ROOT_PATH = Path('.')
+WORKSPACE = Path('../MetaGPT/workspace')
 

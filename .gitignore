@@ -74,7 +74,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+# docs/_build/``
 
 # PyBuilder
 .pybuilder/
@@ -158,6 +158,7 @@ examples/nb/
 .chroma
 *~$*
 workspace/*
+*/workspace/*
 tmp
 metagpt/roles/idea_agent.py
 .aider*
