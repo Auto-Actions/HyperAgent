@@ -20,9 +20,11 @@ The workspace allows developers to start up a project easily by creating an issu
 - From the homepage of the new repository, switch to Action tab to manually set action through `set up a workflow yourself →`
 
 
-## Action Workflow
 
 ![Setup action](profile/assets/create_action_script.png)
+
+
+## Action Workflow
 
 - This is a simple version of action script.
 
