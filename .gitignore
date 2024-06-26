@@ -181,3 +181,6 @@ cov.xml
 *-structure.csv
 *-structure.json
 metagpt/tools/schemas
+
+*/.git_old
+*/.github_old
