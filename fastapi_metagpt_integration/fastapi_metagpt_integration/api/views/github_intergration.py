@@ -145,6 +145,5 @@ async def push_init_code(data: GithubReposRequest):
 if __name__ == '__main__':
     repo_dir = 'gomoku_game'
     remote_name = 'origin'
-    remote_url = 'https://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@github.com/Auto-Actions/test_3'
     repo = git.Repo(WORKSPACE/repo_dir)
     print(repo.remotes)
