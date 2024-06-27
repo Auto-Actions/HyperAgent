@@ -53,7 +53,7 @@ jobs:
           url: 'http://mandoguru.com:8000/v1.0.0/gen_prog/'
           method: 'POST'
           customHeaders: '{"Content-Type": "application/json", "KEY": "MqQVfJ6Fq1umZnUI7ZuaycciCjxi3gM0"}'
-          data: '{"idea": "${{ github.event.issue.body }}", "n_rounds": 3}'
+          data: '{"idea": "${{ github.event.issue.body }}", "n_rounds": 5, "project_name": "$ {{ github.repository }}"}'
           preventFailureOnNoResponse: 'true'
           timeout: 1000000
           
