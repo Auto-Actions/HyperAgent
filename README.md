@@ -8,7 +8,7 @@
 <br/>
 
 # Overview
-![Startup overview](profile/assets/overview.svg)
+![Startup overview](profile/assets/tool_overview.png)
 
 The workspace allows developers to start up a project easily by creating an issue within your requirements.
 
@@ -106,7 +106,7 @@ jobs:
 
 # Demo video
 
-![Youtube](https://www.youtube.com/)
+[Youtube](https://youtu.be/B7aHY052LAU)
 
 
 # TODO
