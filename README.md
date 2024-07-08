@@ -14,8 +14,27 @@ The workspace allows developers to start up a project easily by creating an issu
 
 # Usage
 
+## Setup repository
+
 - When you come up with an idea then want to implement a software for that idea. Let's start by creating a new repository in our workspace.
 ![Create repository](profile/assets/create_repository.png)
+
+- Create GitHub Access Tokens
+  - Go to `Settings ⟶ Developer Settings ⟶ Personal access tokens ⟶ Generate new token`
+  - Select `All repositories` option in `Repository access`.
+  - Grant `Read and Write` permission for `Contents` access.
+  - Gerate token and copy to clipboard.
+![Setup repository](profile/assets/generate_access_token.png)
+
+- Assign Secret
+  - From homepage of the created repository. Go to `Settings ⟶ Secrets and variables ⟶ Actions ⟶ New repository secret.
+  - Name of the secrets is `REPO_TOKEN`
+  - Paste the created GitHub Access Tokens.
+  - Add secret.
+![Add secret](profile/assets/add_secret.png)
+
+
+## Action Workflow
 
 - From the homepage of the new repository, switch to Action tab to manually set action through `set up a workflow yourself →`
 
@@ -24,7 +43,7 @@ The workspace allows developers to start up a project easily by creating an issu
 ![Setup action](profile/assets/create_action_script.png)
 
 
-## Action Workflow
+
 
 - This is a simple version of action script.
 
@@ -106,7 +125,7 @@ jobs:
 
 # Demo video
 
-[Youtube](https://youtu.be/B7aHY052LAU)
+[Youtube](https://2ly.link/1yc85)
 
 
 # TODO
