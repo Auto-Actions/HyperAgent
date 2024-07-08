@@ -67,7 +67,7 @@ jobs:
           url: 'http://mandoguru.com:8000/v1.0.0/init_repo/'
           method: 'POST'
           customHeaders: '{"Content-Type": "application/json", "KEY": "MqQVfJ6Fq1umZnUI7ZuaycciCjxi3gM0"}'
-          data: '{"id": "01", "name": "${{ fromJson(steps.genRequest.outputs.response).repo_name }}", "local": "${{ fromJson(steps.genRequest.outputs.response).repo_name }}", "remote_url": "${{ github.server_url }}/${{ github.repository }}", "github_token": ${{ secret.GITHUB_TOKEN }},  "remote_name": "origin", "branch": "initial", "commit_message": "Init commit"}'
+          data: '{"id": "01", "name": "${{ fromJson(steps.genRequest.outputs.response).repo_name }}", "local": "${{ fromJson(steps.genRequest.outputs.response).repo_name }}", "remote_url": "${{ github.server_url }}/${{ github.repository }}", "github_token": ${{ secrets.GITHUB_TOKEN }},  "remote_name": "origin", "branch": "initial", "commit_message": "Init commit"}'
           preventFailureOnNoResponse: 'true'
           timeout: 600000
 ```
