@@ -32,7 +32,8 @@ def add_remote_url(repo_dir: Path, remote_name: str, remote_url: str):
 
         # Check if the remote already exists
         if remote_name in repo.remotes:
-            logger.info(f"Remote '{remote_name}' already exists in the repository.")
+            logger.info(f"Remote '{remote_name}' already exists in the repository. Set new remote URL")
+            repo.remotes[remote_name].set_url(remote_url)
             return
 
         # Add the remote with the specified name and URL
@@ -62,6 +63,8 @@ def push_to_new_branch(repo_dir: Path, remote_name: str, remote_url: str, branch
         else:
             logger.info(f'Remote {remote_name} does already exist.')
             origin = repo.remote(remote_name)
+            # origin.set_url(remote_url)
+
         # Create a new branch
         logger.info(repo.branches)
         existing_branch = [b.name for b in repo.branches]
@@ -69,6 +72,7 @@ def push_to_new_branch(repo_dir: Path, remote_name: str, remote_url: str, branch
             new_branch = branch_name
             # repo.git.checkout('HEAD', b=new_branch)
             logger.info(f'Branch {branch_name} does already exist.')
+            # origin.pull(new_branch)
         else:
             logger.info(f"Created new local branch '{branch_name}'.")
             new_branch = repo.create_head(branch_name)
@@ -76,7 +80,8 @@ def push_to_new_branch(repo_dir: Path, remote_name: str, remote_url: str, branch
             repo.index.commit(commit_message)
             logger.info(f"Committed changes with message: '{commit_message}'.")
         # Push the new branch to the remote (set upstream for convenience)
-        origin.pull(new_branch)
+        
+        # logger.info(origin.url)
         origin.push(f'master:{new_branch}', set_upstream=True)
         logger.info(f"Successfully pushed branch '{branch_name}' to remote '{remote_name}'.")
 
@@ -127,7 +132,8 @@ class GitHubIntegration:
 async def push_init_code(data: GithubReposRequest):
     # local_dir = ROOT_PATH / config.WORKSPACE / data.local
     local_dir = WORKSPACE / data.local
-    github_token = config_env['GITHUB_TOKEN']
+    # github_token = config_env['GITHUB_TOKEN']
+    github_token = data.github_token
     auth_remote_url = data.remote_url.replace('https://', f'https://{github_token}@')
     logger.info(f'Remote URL {auth_remote_url}')
     add_remote_url(local_dir, data.remote_name, auth_remote_url)

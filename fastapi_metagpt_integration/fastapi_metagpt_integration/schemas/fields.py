@@ -10,6 +10,7 @@ class GithubReposRequest(BaseModel):
     name: Optional[str]
     local: Path
     remote_url: str
+    github_token: str
     remote_name: str = 'origin'
     branch: str = 'master'
     commit_message: str = 'Default message'
