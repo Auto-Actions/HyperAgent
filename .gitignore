@@ -1,7 +1,7 @@
 ### Python template
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
+__pycache__
 *.py[cod]
 *$py.class
 
@@ -27,6 +27,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+metagpt/tools/schemas/
+examples/data/search_kb/*.json
 
 # PyInstaller
 #  Usually these files are written by a python scripts from a template
@@ -61,7 +63,6 @@ unittest.txt
 # Django stuff:
 *.log
 logs
-*/logs
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
@@ -74,7 +75,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-# docs/_build/``
+docs/_build/
 
 # PyBuilder
 .pybuilder/
@@ -152,6 +153,7 @@ allure-results
 .vscode
 
 key.yaml
+<<<<<<< HEAD
 data
 data.ms
 examples/nb/
@@ -159,6 +161,19 @@ examples/nb/
 *~$*
 workspace/*
 */workspace/*
+=======
+/data/
+data.ms
+examples/nb/
+examples/default__vector_store.json
+examples/docstore.json
+examples/graph_store.json
+examples/image__vector_store.json
+examples/index_store.json
+.chroma
+*~$*
+workspace/*
+>>>>>>> 5446c7e490e7203c61b2ff31181551b2c0f4a86b
 tmp
 metagpt/roles/idea_agent.py
 .aider*
@@ -170,6 +185,10 @@ output
 tmp.png
 .dependencies.json
 tests/metagpt/utils/file_repo_git
+<<<<<<< HEAD
+=======
+tests/data/rsp_cache_new.json
+>>>>>>> 5446c7e490e7203c61b2ff31181551b2c0f4a86b
 *.tmp
 *.png
 htmlcov
@@ -184,3 +203,5 @@ metagpt/tools/schemas
 
 */.git_old
 */.github_old
+*.dot
+.python-version
