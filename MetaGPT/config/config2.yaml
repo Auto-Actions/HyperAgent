@@ -3,12 +3,6 @@
 # Config Docs: https://docs.deepwisdom.ai/main/en/guide/get_started/configuration.html
 llm:
   api_type: "openai"  # or azure / ollama / groq etc.
-  model: "gpt-4o"  # or gpt-3.5-turbo
+  model: "gpt-4-turbo"  # or gpt-3.5-turbo
   base_url: "https://api.openai.com/v1"  # or forward url / other llm url
-  api_key: "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"  # myself
-  # api_key: "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"    # lab
-
-  # api_type: "gemini"  # or azure / ollama / open_llm etc. Check LLMType for more options
-  # model: "gemini"  # or gpt-3.5-turbo-1106 / gpt-4-1106-preview
-  # base_url: "https://ai.google.dev/v1"  # or forward url / other llm url
-  # api_key: "AIzaSyDE1be8fN1Q49CW-LQjxzaA-0w_zbdwjok"
+  api_key: "YOUR_API_KEY"
