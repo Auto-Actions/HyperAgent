@@ -1,0 +1,2331 @@
+{
+  "name": "HyperAgent",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        2800
+      ],
+      "id": "0b613a58-53a4-43e9-82b6-7a61ef000824",
+      "webhookId": "e5df02ee-dd10-460b-9d4c-6e652204b76b",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// --- Configuration ---\n// Maps user commands to initial states.\nconst COMMANDS = {\n  '/start': 'START',\n  '/reset': 'START',\n  '/create': 'AWAITING_REQUIREMENT',\n  '/audit': 'AWAITING_AUDIT_CODE',\n  '/revise': 'AWAITING_REVISE_CODE',\n  '/refactor': 'AWAITING_REFACTOR_CODE',\n  '/explain': 'AWAITING_EXPLAIN_CODE',\n};\n\n// Defines the next state based on the current state.\nconst STATE_TRANSITIONS = {\n  'START': 'AWAITING_TASK',\n  'AWAITING_REQUIREMENT': 'GENERATING_APP',\n  'AWAITING_AUDIT_CODE': 'AUDITTING_CODE',\n  'AWAITING_REVISE_CODE': 'REVISING_CODE',\n  'AWAITING_REFACTOR_CODE': 'REFACTORING_CODE',\n  'AWAITING_EXPLAIN_CODE': 'EXPLAINING_CODE',\n};\n\n// Defines which property to update with the message text for a given state.\nconst STATE_DATA_MAP = {\n    'AWAITING_REQUIREMENT': 'requirements',\n    'AWAITING_AUDIT_CODE': 'sourceCode',\n    'AWAITING_REVISE_CODE': 'sourceCode',\n    'AWAITING_REFACTOR_CODE': 'requirements', // Assuming requirements are provided for refactoring\n    'AWAITING_EXPLAIN_CODE': 'sourceCode',\n};\n\n\n// --- Main Logic ---\n\n// 1. Get persistent workflow data\nconst staticData = this.getWorkflowStaticData('global');\n\n// 2. Extract message details from the input\nconst chatId = $json.message.chat.id;\nconst messageText = $json.message.text.trim();\nconst command = messageText.toLowerCase().split(' ')[0]; // Get the first word as a potential command\n\n// 3. Initialize or retrieve the chat state\nconst chatKey = `chat_${chatId}`;\nlet chatState = staticData[chatKey] || { step: 'START', requirements: null, sourceCode: null };\n\n// 4. Determine the next state\nif (COMMANDS[command]) {\n  // If the message is a recognized command, reset the state.\n  chatState = {\n    step: COMMANDS[command],\n    requirements: null,\n    sourceCode: null,\n  };\n} else {\n  // Otherwise, handle it as a response based on the current state.\n  const currentStep = chatState.step;\n  const nextStep = STATE_TRANSITIONS[currentStep];\n\n  if (nextStep && messageText) {\n    // Check if the current state expects data to be saved\n    const dataField = STATE_DATA_MAP[currentStep];\n    if (dataField) {\n        chatState[dataField] = messageText;\n    }\n    // Transition to the next step\n    chatState.step = nextStep;\n  } else if (!nextStep) {\n    // If there's no defined transition (e.g., 'PROCESSING'), do nothing or handle as an error.\n    // For now, we keep the state as is.\n  } else {\n    // If the message is empty but a transition was expected, do nothing.\n    // The user might need to send a valid message.\n  }\n}\n\n// 5. Save the updated state\nstaticData[chatKey] = chatState;\n\n// 6. Output the results for the next nodes in the workflow\nreturn {\n  chatId,\n  messageText,\n  chatState,\n};"
+      },
+      "name": "Manage State",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -2208,
+        2800
+      ],
+      "id": "47d5f4ef-0c4e-4312-9413-7aededf1e872"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "START",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "bacb74ac-5fce-4d5c-b0f7-c017c693a77e"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "739fdf6e-4ff3-48af-be38-3ba0793563e2",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "AWAITING_REQUIREMENT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "ee250a2b-1db0-416e-a871-3257860be96f",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "GENERATING_APP",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0a75336b-a84f-48a8-9423-f89f8eddc773",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "AWAITING_REVISE_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1a13c777-8302-41e0-a31b-03f862fe351e",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "REVISING_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6c0d08d1-2266-4aab-be1e-a03c892e4c99",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "AWAITING_AUDIT_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a027d383-c952-485c-8e0a-4b161b93727c",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "AUDITTING_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1410fcd7-9a1a-4c41-b15e-8b13f44de325",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "AWAITING_REFACTOR_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "386a69ba-61c0-40cd-87e6-5694b29910e5",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "REFACTORING_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "fa2fcb60-a075-4b61-a7b9-02fd82d97642",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "AWAITING_EXPLAIN_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e689ad7e-7e09-4e9b-a11d-ae6cd7023d6d",
+                    "leftValue": "={{ $json.chatState.step }}",
+                    "rightValue": "EXPLAINING_CODE",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": 0
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1760,
+        2624
+      ],
+      "id": "ecb5f25f-6f00-4bd8-b57a-1eed762e095d",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/v1.0.0/gen_prog/",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "name": "Call Code Generation API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2416,
+        5312
+      ],
+      "executeOnce": false,
+      "id": "a93eaa14-7582-4292-b5b3-7dc6d47781ce"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "repository",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "name": "Create GitHub Repo",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        -1984,
+        5072
+      ],
+      "id": "2699f9b5-853c-4008-a032-7c884e35e558",
+      "webhookId": "a2486477-7d3b-49b1-8396-ea8abe90d3d2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "authentication": " έχουν",
+        "resource": "file",
+        "operation": "createUpdate",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "repository": "={{ $('Create GitHub Repo').item.json.full_name }}",
+        "filePath": "={{ $json.filename || 'app_code.' + ($json.filename ? $json.filename.split('.').pop() : 'txt') }}"
+      },
+      "name": "Push Code to GitHub",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        -1760,
+        5072
+      ],
+      "id": "ce8ae233-d670-4f0b-995e-6652bd055fd9",
+      "webhookId": "6858c391-05c1-4098-bee6-15ddbd0543f4",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Manage State').item.json.chatId }}",
+        "text": "=Excellent! Your application \"{{ $('Manage State').item.json.chatState.appName }}\" has been generated and pushed to GitHub.\n\nYou can access it here: {{ $('Create GitHub Repo').item.json.html_url }}",
+        "additionalFields": {}
+      },
+      "name": "Send GitHub Link to User",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        5024
+      ],
+      "id": "a31262f3-b1bb-4fbe-87d0-fd260533e7e1",
+      "webhookId": "7eb2f704-63b9-44c4-b0c0-bae1a636e081",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId || $('Manage State').item.json.chatId }}",
+        "text": "=⚠️ An error occurred! \n\nDetails: {{ $json.error.message || $json.errorMessage || 'Unknown error during processing.' }}\n\nPlease try again, or contact support if the issue persists.",
+        "additionalFields": {}
+      },
+      "name": "Send Error Message",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1328,
+        5264
+      ],
+      "executeOnce": false,
+      "id": "0d6a7464-cf85-4c84-a4d6-169a04b1da1e",
+      "webhookId": "84037efb-e4e2-4479-b2a4-e57a38a6998e",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "// This node is mainly for routing errors from specific points\n// For simplicity in this example, we'll pass through the error data.\n// In a more complex workflow, you might transform or log the error here.\n\nconst errorData = $input.item.json;\n\nif (errorData.error && errorData.error.message) {\n  return { errorMessage: errorData.error.message, chatId: errorData.chatId };\n}\nif (errorData.errorMessage) {\n   return { errorMessage: errorData.errorMessage, chatId: errorData.chatId };\n}\n\n// If an execution fails and its error output is connected here:\nconst execution = this.getExecution();\nif (execution && execution.error) {\n  // Attempt to get chatId from an earlier node if possible for error notification context\n  // This is a bit tricky as error path might not have it directly.\n  // Best to pass chatId along if using this generic error handler approach.\n  let chatIdForError = 'UNKNOWN_CHAT_ID'; // Default if not found\n  try {\n     // Try to find a node that has chatId, e.g., 'Manage State'\n     const manageStateNodeOutput = this.getNode('Manage State');\n     if (manageStateNodeOutput && manageStateNodeOutput.item && manageStateNodeOutput.item.json.chatId) {\n         chatIdForError = manageStateNodeOutput.item.json.chatId;\n     }\n  } catch (e) { /* ignore if node not found or no data */ }\n\n  return { errorMessage: execution.error.message, chatId: chatIdForError };\n}\n\nreturn { errorMessage: 'An unexpected error occurred.', chatId: 'UNKNOWN_CHAT_ID' };"
+      },
+      "name": "Prepare Error Info",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        -1536,
+        5344
+      ],
+      "id": "058fdd5d-8232-46fd-b71d-797547337e30"
+    },
+    {
+      "parameters": {
+        "authentication": " έχουν",
+        "resource": "repository",
+        "operation": "create",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "name": "Revise Repo",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        -1984,
+        5424
+      ],
+      "id": "1ef4187c-d41c-48ac-bc4d-b2cac0656f11",
+      "webhookId": "a2486477-7d3b-49b1-8396-ea8abe90d3d2",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "fb416077-4766-4f07-a066-c69279966cc9",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2208,
+        5248
+      ],
+      "id": "e72759e0-4536-4702-970d-11585c0468ce",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "resource": "assistant",
+        "operation": "create",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1328,
+        5472
+      ],
+      "id": "31b67e79-d365-43a0-9a0d-6751730438e1",
+      "name": "Error Analyst",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "repository",
+        "operation": "__CUSTOM_API_CALL__",
+        "owner": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "repository": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        }
+      },
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1.1,
+      "position": [
+        -1760,
+        4864
+      ],
+      "id": "501e193f-efc0-4b5d-a5f0-15027b33aa90",
+      "name": "GitHub",
+      "webhookId": "2141a1b9-38cd-43b6-a97c-f57d3385d7ce",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=We are processing. Please wait a minute...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Auditting",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        2768
+      ],
+      "id": "5e519e65-8772-4466-b2c6-f7d4c2ed7a13",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://d67f-124-246-75-29.ngrok-free.app/v1.0.0/vulnerability/detection/nodetype?model_type=transformer",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "MqQVfJ6Fq1umZnUI7ZuaycciCjxi3gM0"
+            },
+            {
+              "name": "accept",
+              "value": "application/json"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "contract_name",
+              "value": "contract_0.sol"
+            },
+            {
+              "name": "smart_contract",
+              "value": "={{ $('Manage State').item.json.chatState.sourceCode }}"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "name": "Call Audit Service API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -736,
+        2944
+      ],
+      "executeOnce": false,
+      "id": "bad595a7-5f17-4d48-997d-a97ff551544c",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Manage State').item.json.chatId }}",
+        "text": "=This is audit report and suggestion:\n{{ $json.summaries[0].type }}: {{ $json.summaries[0].vulnerability }}\n{{ $json.summaries[1].type }}: {{ $json.summaries[1].vulnerability }}\n{{ $json.summaries[2].type }}: {{ $json.summaries[2].vulnerability }}\n{{ $json.summaries[3].type }}: {{ $json.summaries[3].vulnerability }}\n{{ $json.summaries[4].type }}: {{ $json.summaries[4].vulnerability }}\n{{ $json.summaries[5].type }}: {{ $json.summaries[5].vulnerability }}\n{{ $json.summaries[6].type }}: {{ $json.summaries[6].vulnerability }}\n\nSuggestion: {{ $json.suggestion }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Audit report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        3008
+      ],
+      "id": "bbbd3d4c-0e86-4a05-8e5e-c850e799896f",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=Hi! I'm here to help you audit smart contracts. Please send me the source code that needs to be audited.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Ask Code for Auditting",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1216,
+        2640
+      ],
+      "id": "0d585097-25e0-4661-a102-7c0a876d4a3e",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=Hi! I'm here to help you refactor your code.\nPlease send me the source code that needs to be refactored.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Ask Code for Refactoring",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        3184
+      ],
+      "id": "b58ad80b-7b06-4c50-bff1-d6dbd586cc6d",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=Hi! I'm here to help you explain smart contracts. \nWe are processing. Please wait a minute ...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Ask Code for Explaining",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1456,
+        3792
+      ],
+      "id": "6f5e168c-9378-4308-8d22-04e0829d5aee",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=I'm rewrite your code. Please wait a minute ...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Revised Code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        2400
+      ],
+      "id": "462d8ff3-65d2-4b8c-99b7-1a00d696c63f",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=We are refactoring. Please wait a minute...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Refactoring Code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1136,
+        3280
+      ],
+      "id": "2eb03512-10c2-4b05-a9ee-0e35ee6f0a76",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write the smart contract for the idea \"\"",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -2176,
+        1024
+      ],
+      "id": "bb8d6e3b-37dd-4d0d-8880-454ec1087788",
+      "name": "Gen AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2208,
+        1248
+      ],
+      "id": "da4f9430-244d-455a-acf7-ada2e41cf8fa",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        2624
+      ],
+      "id": "ef98e248-073f-48bf-a815-3a25ef72bd4c",
+      "name": "Gen AI Agent1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -688,
+        2800
+      ],
+      "id": "65de01c9-ef3e-4fbf-88e6-eb50ee8f7b1c",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get a repository in GitHub",
+        "authentication": "oAuth2",
+        "resource": "repository",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "=",
+          "mode": "url"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "https://github.com/Auto-Actions/Action_test",
+          "mode": "url"
+        }
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        -1968,
+        1248
+      ],
+      "id": "156fa672-04a3-469b-92c1-da9e0007d029",
+      "name": "GitHub1",
+      "webhookId": "b274ef2c-dc55-427c-8e65-5fae7eaedf80",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "NbTxQnpJz3Ilo80j",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -2080,
+        1248
+      ],
+      "id": "2529567c-3d13-4760-9182-0c2e65d3ea36",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=We are processing. Please wait a minute...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Generating",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        1024
+      ],
+      "id": "410b9c0d-a873-466c-97ca-fed74e9b38be",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -544,
+        2832
+      ],
+      "id": "ca23e89e-c7da-46a9-a7ac-39d0669ed568",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=This is the generated smart contract:\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Return Code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1760,
+        1024
+      ],
+      "id": "cc684563-82e1-454f-b777-e77d882b9c3e",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d1cbd43-25b9-4ffa-99f8-c7313167209f",
+              "name": "chatId",
+              "value": "={{ $json.chatId }}",
+              "type": "number"
+            },
+            {
+              "id": "0ba633ed-ffe8-43b4-a42f-790eb6bfb1e4",
+              "name": "messageText",
+              "value": "={{ $json.messageText }}",
+              "type": "string"
+            },
+            {
+              "id": "c83b7ded-08c1-4934-a7cd-afc7fc1a6250",
+              "name": "chatState.step",
+              "value": "={{ $json.chatState.step }}",
+              "type": "string"
+            },
+            {
+              "id": "6074fc76-5320-4fed-aff2-b2c2e8cb43f3",
+              "name": "chatState.appName",
+              "value": "={{ $json.chatState.appName }}",
+              "type": "string"
+            },
+            {
+              "id": "1b73d54d-449c-4d91-8af5-328ee96b6be7",
+              "name": "chatState.requirements",
+              "value": "={{ $json.chatState.requirements }}",
+              "type": "string"
+            },
+            {
+              "id": "bd94b6a2-6888-4217-9944-4e33a19e12b7",
+              "name": "chatState.sourceCode",
+              "value": "={{ $json.chatState.sourceCode }}",
+              "type": "string"
+            },
+            {
+              "id": "acbd00e3-7821-4727-91ea-ecf43fc0ca58",
+              "name": "chatState.curState",
+              "value": "={{ $json.chatState.curState }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1984,
+        2800
+      ],
+      "id": "d0212827-a0d7-4467-a602-e98cd8057676",
+      "name": "Set Fields"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-05-20",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -928,
+        4000
+      ],
+      "id": "0ef6002c-19a6-448f-8149-f2866f1ef749",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get a repository in GitHub",
+        "authentication": "oAuth2",
+        "resource": "repository",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "=",
+          "mode": "url"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "https://github.com/Auto-Actions/Action_test",
+          "mode": "url"
+        }
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        -800,
+        4000
+      ],
+      "id": "bd3b96a5-2378-4115-89b4-f3c787f27e00",
+      "name": "GitHub4",
+      "webhookId": "b274ef2c-dc55-427c-8e65-5fae7eaedf80",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "NbTxQnpJz3Ilo80j",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Add comments to the given Solidity smart contract to explain the source code. \nThe smart contract:\n{{ $('Switch').item.json.messageText }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -944,
+        3792
+      ],
+      "id": "83306c1e-f08e-452f-aac1-31855dc2d7a8",
+      "name": "Explain Agent"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -2416,
+        208
+      ],
+      "id": "8d16e064-185d-49ed-9350-df4494e7de4d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/orgs/Auto-Actions/repos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer XXXXX"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"name\": \"my-smart-contract\",\n  \"description\": \"A new repository for our organization, created via n8n.\",\n  \"private\": false\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2208,
+        208
+      ],
+      "id": "c09661eb-e93d-45d5-8e76-242c3311b235",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=We are processing, please wait a minute ...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Generate app",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1280,
+        1920
+      ],
+      "id": "96c808cb-74c7-4d0c-92c5-2a98db156b1c",
+      "webhookId": "7e2fd54a-9524-4cab-bcef-d5caedd06909",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set Fields').item.json.chatId }}",
+        "text": "=Your smart contract:\n```\n{{ $json.output.replaceSpecialChars().removeTags().removeMarkdown().replaceAll('?','')  }}\n```",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Return Gen code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        1984
+      ],
+      "id": "0b462ee9-fbb6-4c0d-91f5-6460ba4b1540",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set Fields').item.json.chatId }}",
+        "text": "=Your source code was successfully refactored at https://github.com/Auto-Actions/auction-system/blob/master/smart_contract_auction_1753330511/Auction.sol",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "name": "Return Refactor code1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -2208,
+        4608
+      ],
+      "id": "5562cedc-3b7f-4300-9079-b424bf264ef2",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2416,
+        4608
+      ],
+      "id": "5e14beba-1f32-4bf3-b8e1-02a673fd3b61",
+      "name": "Wait1",
+      "webhookId": "00d13438-ce4f-4b0b-af5d-f5a41336c28b"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -2400,
+        688
+      ],
+      "id": "5872acb9-56d2-489b-affe-ac0318d4c73b",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Revise the given solidity smart contract to ensure the smart contract is invulnerable.\nThis is the smart contract:\n{{ $('Switch').item.json.messageText }}",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        2304
+      ],
+      "id": "65d8663a-802a-43b8-bd9f-8e450ac5d705",
+      "name": "Generation Agent1"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-04-17-thinking",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        2512
+      ],
+      "id": "06b5d4eb-a5ab-4ddd-98d6-b23f05959d88",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a short smart contract in Solidity language about the for the idea \"{{ $('Switch').item.json.messageText }}\". Only output the smart contract code.",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -2416,
+        464
+      ],
+      "id": "9a5a25f1-3ee4-4e13-bc5b-3e983421fd3d",
+      "name": "Generation Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set Fields').item.json.chatId }}",
+        "text": "=Your smart contract was publisched at ",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Return Code1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -2048,
+        560
+      ],
+      "id": "e5f5375c-0128-48b7-9ab4-5e5ecc51f185",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "file",
+        "owner": {
+          "__rl": true,
+          "value": "Auto-Actions",
+          "mode": "name"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "https://github.com/Auto-Actions/Action_test",
+          "mode": "url"
+        },
+        "filePath": "contract1.sol",
+        "fileContent": "={{ $json.output }}",
+        "commitMessage": "init contract"
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        -2272,
+        688
+      ],
+      "id": "cc101334-564a-4085-8dc4-3bbf5f59b05b",
+      "name": "GitHub2",
+      "webhookId": "b274ef2c-dc55-427c-8e65-5fae7eaedf80",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "NbTxQnpJz3Ilo80j",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=I can help you create and manage smart contracts. Please see our service at mandoscan.com\nYou can control me by sending these commands:\n\nGeneration\n/create - Create a smart contract from your requirements\n/revise - Feedback to the generated smart contract\n\nExplore\n/audit - Get the audit report of the given smart contract\n/refactor - Refactor the given smart contract\n/explain - Explain the given smart contract\n\nExit\n/reset - Rest the chat session\n",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Intro",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1568,
+        1504
+      ],
+      "id": "1c21cc78-5cb4-4fc6-9f02-3899c60c5952",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -1040,
+        2048
+      ],
+      "id": "9e6bdb70-5f31-4649-93df-9972287397ad",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Write a short solidity smart contract (less than 4000 characters) from the idea \"{{ $('Switch').item.json.messageText }}\".\n!IMPORTANT NOTE: Return application name and source code in json format.\nThe output format is like:\n{\n  \"appName\": <name of the generated app>,\n  \"sourceCode\": <generated source code>\n}",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -1056,
+        1824
+      ],
+      "id": "418c18b6-28e3-4ac7-ab12-1e15d7e6655c",
+      "name": "Generate code"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get issues of a repository in GitHub",
+        "authentication": "oAuth2",
+        "resource": "repository",
+        "owner": {
+          "__rl": true,
+          "value": "=",
+          "mode": "url"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "https://github.com/Auto-Actions/Action_test",
+          "mode": "url"
+        },
+        "getRepositoryIssuesFilters": {}
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        -928,
+        2048
+      ],
+      "id": "af319d56-8810-4648-81cc-bb267faad388",
+      "name": "GitHub Create",
+      "webhookId": "b274ef2c-dc55-427c-8e65-5fae7eaedf80",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "NbTxQnpJz3Ilo80j",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -896,
+        3408
+      ],
+      "id": "8ed00ba1-9f53-4ee3-a259-a23083f3ac60",
+      "name": "Google Gemini Chat Model6",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "sYt6ry7kUGLAedKv",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Get a repository in GitHub",
+        "authentication": "oAuth2",
+        "resource": "repository",
+        "operation": "get",
+        "owner": {
+          "__rl": true,
+          "value": "=",
+          "mode": "url"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "https://github.com/Auto-Actions/Action_test",
+          "mode": "url"
+        }
+      },
+      "type": "n8n-nodes-base.githubTool",
+      "typeVersion": 1.1,
+      "position": [
+        -784,
+        3408
+      ],
+      "id": "005a8149-797b-4be9-9b7d-6ee8eb1f6d8f",
+      "name": "GitHub5",
+      "webhookId": "b274ef2c-dc55-427c-8e65-5fae7eaedf80",
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "NbTxQnpJz3Ilo80j",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Refactor the smart contract:\n```\n{{ $('Switch').item.json.messageText }}\n```\n!IMPORTANT NOTE: Only return code",
+        "options": {
+          "systemMessage": "You are a helpful assistant in smart contract development."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        3168
+      ],
+      "id": "c1650ce2-305a-4c03-bdc3-fef899001c4f",
+      "name": "Refactor Agent"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set Fields').item.json.chatId }}",
+        "text": "=This is the refactored smart contract:\n```\n{{ $json.output.removeTags().removeMarkdown().replaceAll('?','') }}\n```",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Return refactered code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -544,
+        3280
+      ],
+      "id": "c714f39e-8389-42d2-b83b-b196b433995f",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=Great! I'm here to help you revise the generated code.\nPlease send me the source code that needs to be revised.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Ask Code for Revising",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1296,
+        2288
+      ],
+      "id": "7d66ee62-570e-47e5-a5ff-3cd7fbd7e7d8",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set Fields').item.json.chatId }}",
+        "text": "=This is the smart contract with explaination:\n{{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Return Explained Code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        3792
+      ],
+      "id": "51ffc415-6903-4d9c-89f4-95fe1d7dad84",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Set Fields').item.json.chatId }}",
+        "text": "=This is the generated smart contract:\n{{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Return Revised Code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        2160
+      ],
+      "id": "e77c2bb2-0be9-4540-a956-0b815081ed39",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/orgs/Auto-Actions/repos",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer XXXXX"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"name\": \"my-smart-contract\",\n  \"description\": \"A new repository for our organization, created via n8n.\",\n  \"private\": false\n}",
+        "options": {
+          "redirect": {
+            "redirect": {}
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2416,
+        1392
+      ],
+      "id": "32788ab3-e6e6-48b2-967a-22a5e1bc3b60",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=We are explaining your code. Please wait a minute...",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Explaining Code",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1168,
+        3792
+      ],
+      "id": "4b109ca0-501e-4f3e-a272-62ae2777b0d4",
+      "webhookId": "f5aa0d41-0ef3-4d5e-b60e-c5159dbee67f",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.chatId }}",
+        "text": "=Hello! I'm your friendly code generation bot.\nPlease provide the requirements of your expected software.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "name": "Ask App Requirement",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1,
+      "position": [
+        -1296,
+        1680
+      ],
+      "id": "caf98020-1e65-451a-b32e-5b94f07b9b6f",
+      "webhookId": "7e2fd54a-9524-4cab-bcef-d5caedd06909",
+      "alwaysOutputData": true,
+      "credentials": {
+        "telegramApi": {
+          "id": "7a95B7dNAcGATD48",
+          "name": "HyperAgent Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Code Generation",
+        "height": 600,
+        "width": 840
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1360,
+        1632
+      ],
+      "typeVersion": 1,
+      "id": "f1fffc40-86e4-4c83-9eb4-7465dd4077d2",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"my_field_1\": \"value\",\n  \"my_field_2\": 1\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        1712
+      ],
+      "id": "ddb6699a-7ff4-43ae-92a1-6cbe50e69909",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nconst items = [];\nfor (const item of $input.all()) {\n  const jsonData = item.json.parse(item.json.jsonString);\n  items.push({ json: jsonData });\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        1728
+      ],
+      "id": "53907e61-404a-42bd-97f7-f8a0d8d46378",
+      "name": "Code",
+      "alwaysOutputData": true,
+      "disabled": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Manage State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manage State": {
+      "main": [
+        [
+          {
+            "node": "Set Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Intro",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask App Requirement",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate app",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask Code for Revising",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revised Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask Code for Auditting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Auditting",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask Code for Refactoring",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Refactoring Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask Code for Explaining",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Explaining Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create GitHub Repo": {
+      "main": [
+        [
+          {
+            "node": "Push Code to GitHub",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Error Info",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "GitHub",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push Code to GitHub": {
+      "main": [
+        [
+          {
+            "node": "Send GitHub Link to User",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Error Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Code Generation API": {
+      "main": [
+        [
+          {
+            "node": "Prepare Error Info",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Error Info": {
+      "main": [
+        [
+          {
+            "node": "Send Error Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Error Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Create GitHub Repo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Revise Repo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revise Repo": {
+      "main": [
+        [
+          {
+            "node": "Push Code to GitHub",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Error Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auditting": {
+      "main": [
+        [
+          {
+            "node": "Call Audit Service API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gen AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Audit Service API": {
+      "main": [
+        [
+          {
+            "node": "Audit report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Code for Explaining": {
+      "main": [
+        []
+      ]
+    },
+    "Audit report": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gen AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gen AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gen AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Gen AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generating": {
+      "main": [
+        [
+          {
+            "node": "Gen AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Gen AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gen AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Return Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Explain Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub4": {
+      "ai_tool": [
+        [
+          {
+            "node": "Explain Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explain Agent": {
+      "main": [
+        [
+          {
+            "node": "Return Explained Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate app": {
+      "main": [
+        [
+          {
+            "node": "Generate code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Gen code": {
+      "main": [
+        []
+      ]
+    },
+    "Refactoring Code": {
+      "main": [
+        [
+          {
+            "node": "Refactor Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Return Refactor code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generation Agent1": {
+      "main": [
+        [
+          {
+            "node": "Return Revised Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generation Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generation Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generation Agent": {
+      "main": [
+        [
+          {
+            "node": "Return Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generation Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate code",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate code": {
+      "main": [
+        [
+          {
+            "node": "Return Gen code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Create": {
+      "ai_tool": [
+        [
+          {
+            "node": "Generate code",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Refactor Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub5": {
+      "ai_tool": [
+        [
+          {
+            "node": "Refactor Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refactor Agent": {
+      "main": [
+        [
+          {
+            "node": "Return refactered code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revised Code": {
+      "main": [
+        [
+          {
+            "node": "Generation Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explaining Code": {
+      "main": [
+        [
+          {
+            "node": "Explain Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask App Requirement": {
+      "main": [
+        []
+      ]
+    },
+    "Return Revised Code": {
+      "main": [
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        []
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "21f893b8-0551-4660-aaa5-ca842e40e49a",
+  "meta": {
+    "instanceId": "dbfc9b0bef4cf5b18f9e2d29ae9e0d891d0444014d541ce0f01b0fcdb9c360da"
+  },
+  "id": "wDFIZx03kqRkBc8e",
+  "tags": []
+}
