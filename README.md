@@ -125,10 +125,10 @@ jobs:
 
 # Demo video
 
-[Youtube](https://2ly.link/1yc85)
+[Youtube](https://youtu.be/m950Aem3dCU)
 
 
-# TODO
+<!-- # TODO
 
 ## Service
 - [ ] Tracking local repository on server for further update.
@@ -139,4 +139,4 @@ jobs:
 - [ ] Trigger action call reprogramming service when developer comment/create issue/merge request.
 - [ ] Improve the customization of action. Avoid hardcode, allow developer modify request parameters by environment variables.
 
-
+ -->
