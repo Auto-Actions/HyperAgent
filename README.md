@@ -27,11 +27,18 @@ The workspace allows developers to start up a project easily by creating an issu
 ![Setup repository](profile/assets/generate_access_token.png)
 
 - Assign Secret
-  - From homepage of the created repository. Go to `Settings ⟶ Secrets and variables ⟶ Actions ⟶ New repository secret.
-  - Name of the secrets is `REPO_TOKEN`
-  - Paste the created GitHub Access Tokens.
-  - Add secret.
+  - Grant repo token permission to access the repository.
+    - From homepage of the created repository. Go to `Settings ⟶ Secrets and variables ⟶ Actions ⟶ New repository secret.
+    - Name of the secrets is `ACTION_TOKEN`
+    - Paste the created GitHub Access Tokens.
+    - Add secret.
 ![Add secret](profile/assets/add_secret.png)
+  - Add Gemini API key as secret variable.
+    - Name of the secrets is `GEMINI_API_KEY`
+    - Paste the created Gemini API key.
+    - Add secret.
+![Add secret](profile/assets/add_gemini_key.png)
+
 
 
 ## Action Workflow
@@ -39,61 +46,43 @@ The workspace allows developers to start up a project easily by creating an issu
 - From the homepage of the new repository, switch to Action tab to manually set action through `set up a workflow yourself →`
 
 
-
 ![Setup action](profile/assets/create_action_script.png)
-
 
 
 
 - This is a simple version of action script.
 
 ```yaml
-name: Auto Initialization
+name: Generate Code from Issue
+
 on:
   issues:
-    types:
-      - opened
-      - labeled
-      - reopened
-      - edited
+    types: [opened, reopened, edited]
 
 jobs:
-  run:
+  generate-code:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        id: checkout
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.ACTION_TOKEN }}
         
-      - name: Generate Stage
-        uses: fjogeleit/http-request-action@main
-        id: genRequest
-        with:
-          url: 'http://mandoguru.com:8000/v1.0.0/gen_prog/'
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json", "KEY": "MqQVfJ6Fq1umZnUI7ZuaycciCjxi3gM0"}'
-          data: '{"idea": "${{ github.event.issue.body }}", "n_rounds": 5, "project_name": "${{ github.repository.name }}"}'
-          preventFailureOnNoResponse: 'true'
-          timeout: 1000000
-          
-      - name: Show Generation Response
-        run: echo ${{ fromJson(steps.genRequest.outputs.response).repo_name }}
-
-      - name: Push Project
-        uses: fjogeleit/http-request-action@main
-        id: initRequest
-        with:
-          url: 'http://mandoguru.com:8000/v1.0.0/init_repo/'
-          method: 'POST'
-          customHeaders: '{"Content-Type": "application/json", "KEY": "MqQVfJ6Fq1umZnUI7ZuaycciCjxi3gM0"}'
-          data: '{"id": "01", "name": "${{ fromJson(steps.genRequest.outputs.response).repo_name }}", "local": "${{ fromJson(steps.genRequest.outputs.response).repo_name }}", "remote_url": "${{ github.server_url }}/${{ github.repository }}", "github_token": "${{ secrets.REPO_TOKEN }}",  "remote_name": "origin", "branch": "initial", "commit_message": "Init commit"}'
-          preventFailureOnNoResponse: 'true'
-          timeout: 600000
+    - name: HyperAgent Generator
+      uses: Auto-Actions/hyperagent-action@master
+      with:
+        gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+        github-token: ${{ secrets.ACTION_TOKEN }}
+        output-path: 'generated-code'
+        programming-language: 'python'
+        branch-name: 'feature/ai-generated'
+        create-pull-request: 'true'
+        model-name: 'gemini-2.5-pro'
 ```
 
 - Commit the file as an initial commit. For further actions, you have to update this file as a new commit.
 
-## Secure workflow
+<!-- ## Secure workflow
 
 ![Setup action](profile/assets/commit_action.png)
 
@@ -107,7 +96,7 @@ jobs:
             customHeaders: '{"Content-Type": "application/json", "KEY": &{{ secret.API_KEY }}}'
     ```
 
-- Next step is to tell the action about your idea by creating a new issue.
+- Next step is to tell the action about your idea by creating a new issue. -->
 
 
 ## Initial issues
@@ -129,6 +118,7 @@ jobs:
 
 # Dataset
 
+The dataset for evaluating the framework is available on [Huggingface](https://huggingface.co/datasets/nguyenminh871/software_requirements).
 
 
 <!-- # TODO
