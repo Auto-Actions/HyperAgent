@@ -38,6 +38,8 @@ The workspace allows developers to start up a project easily by creating an issu
     - Paste the created Gemini API key.
     - Add secret.
 ![Add secret](profile/assets/add_gemini_key.png)
+  - Add Mando API key as secret variable.
+    - Name and value of the secrets is `API_KEY` = `MqQVfJ6Fq1umZnUI7ZuaycciCjxi3gM0`
 
 
 
@@ -69,9 +71,10 @@ jobs:
         token: ${{ secrets.ACTION_TOKEN }}
         
     - name: HyperAgent Generator
-      uses: Auto-Actions/hyperagent-action@master
+      uses: Auto-Actions/hyperagent-action@v2.0.0
       with:
         gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+        api-key: ${{ secrets.API_KEY }}
         github-token: ${{ secrets.ACTION_TOKEN }}
         output-path: 'generated-code'
         programming-language: 'python'
